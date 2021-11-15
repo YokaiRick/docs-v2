@@ -123,7 +123,7 @@ If InfluxDB rejects a point due to a [field type](/influxdb/cloud/reference/key-
 | `field`       | Name of the field that caused the rejection.                                                                                                 |
 | `reason`      | Brief description of the problem. See [reasons for rejected points](#reasons-for-rejected-points)                                            |
 | `gotType`     | Received [field](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) type: `Boolean`, `Float`, `Integer`, or `UnsignedInteger` |
-| `wantType`    | Expected [field](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) type: `Boolean`, `Float`, `Integer`, or `UnsignedInteger` |
+| `wantType`    | Expected [field](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) type: `Boolean`, `String`, `Float`, `Integer`, or `UnsignedInteger` |
 | `error`       | Additional error detail.                                                                                                                     |
 | `count`       | `1`                                                                                                                                          |
 | `<timestamp>` | Time the rejected point was logged.                                                                                                          |
