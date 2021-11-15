@@ -57,7 +57,7 @@ Write requests return the following status codes:
     For more information about token types and permissions, see [Manage API tokens](/influxdb/cloud/security/tokens/)
 - `404` **Not found**: A requested resource (e.g. an organization or bucket) was not found.
   The response body contains the requested resource type, e.g. "organization", and resource name.
-- `413` **Request entity too large**: The payload exceeded the 50MB limit.
+- `413` **Request entity too large**: The request payload exceeded the size limit (50 MB uncompressed data).
 - `422` **Unprocessible entity**: Request data is invalid. `code` and `message` in the response body provide details about the problem.
   All request data is rejected and not written.
 - `429` **Too many requests**: API token is temporarily over quota. The `Retry-After` header describes when to try the write request again.
@@ -80,39 +80,65 @@ If you notice data is missing in your bucket, do the following:
 ### Review rejected points
 
 InfluxDB may have rejected points even if the HTTP request returned "Success".
-To get a log of rejected data points, query the [`rejected_points` measurement](/influxdb/cloud/reference/internals/system-buckets/#_monitoring-bucket-schema) in your organization's `_monitoring` bucket.
+Your organization's `_monitoring` bucket logs rejected data points and any parsing errors associated with them.
+To get a log of rejected points, query for the [`rejected_points` measurement](/influxdb/cloud/reference/internals/system-buckets/#_monitoring-bucket-schema) and the [`count` field](/influxdb/cloud/reference/internals/system-buckets/#_monitoring-bucket-schema) in your organization's `_monitoring` bucket.
+Each entry has a `count` equal to `1`.
 
 ```js
 from(bucket: "_monitoring")
-  |> range(start:-1h)
-  |> filter(fn:(r) =>
-    r._measurement == "rejected_points"
-  )
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "rejected_points")
+  |> filter(fn: (r) => r["_field"] == "count")
 ```
 
-InfluxDB returns `rejected_points` log entries.
-Each entry contains the `bucket` where the rejection occurred and a `reason` for the rejection.
+InfluxDB returns `rejected_points` entries that contain the `bucket` where the rejection occurred and the `reason` for the rejection.
+If a parsing error occurred, the entry will contain an `error` field with details.
 
-```sh
-rejected_points,bucket=YOUR_BUCKET,field=YOUR_FIELD,gotType=Float,
-  measurement=YOUR_MEASUREMENT,reason=type\ conflict\ in\ batch\ write,
+```text
+rejected_points,bucket=YOUR_BUCKET,field=YOUR_FIELD,gotType=Float, \
+  measurement=YOUR_MEASUREMENT,reason=type\ conflict\ in\ batch\ write, \
   wantType=Integer count=1i 1627906197091972750
 ```
 
-#### Troubleshoot field type conflicts
+If the data you want to write contains multiple fields in a data point, InfluxDB creates a `rejected_points` entry for each [series](/influxdb/cloud/reference/key-concepts/data-elements/#series) that failed.
+For example, the following line protocol data has an `airSensors` measurement and three fields (`temperature`, `humidity`, and `co`).
 
-Field type conflicts occur if you attempt to write different data types to a field.
-For example, you attempt to write `string` data to an `int` field.
+```
+airSensors,sensorId=TLM0201 temperature=73.97,humidity=35.23,co=0.48 1637014074
 
-{{% note %}}
-If you want to reject batches that contain points with field type conflicts, use an [explicit bucket schema](/influxdb/cloud/organizations/buckets/bucket-schema/). Explicit bucket schemas reject the write request and return an HTTP `400 Bad Request` status code and a JSON response body like the following:
+```
+
+If you try to write this data to a bucket that has the [`explicit` type](/influxdb/cloud/organizations/buckets/bucket-schema/) and doesn't have an `airSensors` schema, the `/api/v2/write` InfluxDB API returns an error and the following data:
+
+```json
+{
+  "code": "invalid",
+  "message": "3 out of 3 points rejected (check rejected_points in your _monitoring bucket for further information)"
+}
+```
+
+InfluxDB logs three `rejected_points` entries, one for each field.
+
+| _measurement    | _field | _value | field       | measurement | reason                            |
+|:----------------|:-------|:-------|:------------|:------------|:----------------------------------|
+| rejected_points | count  | 1      | humidity    | airSensors  | measurement not allowed by schema |
+| rejected_points | count  | 1      | co          | airSensors  | measurement not allowed by schema |
+| rejected_points | count  | 1      | temperature | airSensors  | measurement not allowed by schema |
+
+
+Buckets that have the [`explicit type`] use [explicit bucket schemas](/influxdb/cloud/organizations/buckets/bucket-schema/) and reject data that don't conform to one of the configured schemas.
+For example, a request to write an `air_sensor` point that doesn't conform to the `air_sensor` measurement schema returns an HTTP `400 Bad Request` status code and the following response body:
 ```json
 {
   "code": "invalid",
   "message": "partial write error (2 written): unable to parse 'air_sensor,service=S1,sensor=L1 temperature=\"90.5\",humidity=70.0 1632850122': schema: field type for field \"temperature\" not permitted by schema; got String but expected Float"
 }
 ```
-{{% /note %}}
+
+#### Troubleshoot field type conflicts
+
+Field type conflicts occur if you attempt to write different data types to a field.
+For example, you attempt to write `string` data to an `int` field.
 
 If InfluxDB rejects a point due to a [field type](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) conflict, the rejected point log entry contains the following data elements:
 
@@ -122,9 +148,9 @@ If InfluxDB rejects a point due to a [field type](/influxdb/cloud/reference/key-
 | `measurement` | Measurement name of the point.                                                                                                               |
 | `field`       | Name of the field that caused the rejection.                                                                                                 |
 | `reason`      | Brief description of the problem. See [reasons for rejected points](#reasons-for-rejected-points)                                            |
-| `gotType`     | Received [field](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) type: `Boolean`, `Float`, `Integer`, or `UnsignedInteger` |
-| `wantType`    | Expected [field](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) type: `Boolean`, `String`, `Float`, `Integer`, or `UnsignedInteger` |
-| `error`       | Additional error detail, if any.                                                                                                                     |
+| `gotType`     | Received [field](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) type: `Boolean`, `Float`, `Integer`, `String`, or `UnsignedInteger` |
+| `wantType`    | Expected [field](/influxdb/cloud/reference/key-concepts/data-elements/#field-value) type: `Boolean`, `Float`, `Integer`, `String`, or `UnsignedInteger` |
+| `error`       | Field that contains additional error detail, if any.                                                                                                                     |
 | `count`       | `1`                                                                                                                                          |
 | `<timestamp>` | Time the rejected point was logged.                                                                                                          |
 
@@ -132,7 +158,8 @@ If InfluxDB rejects a point due to a [field type](/influxdb/cloud/reference/key-
 
 Field type conflicts occur for the following reasons:
 
-| Reason                             | Meaning                                                                                                       |
-|:------                             |:-------                                                                                                       |
-| `type conflict in batch write`     | The **batch** contains another point with the same series, but one of the fields has a different value type.  |
-| `type conflict with existing data` | The **bucket** contains another point with the same series, but one of the fields has a different value type. |
+| Reason                              | Meaning                                                                                                       |
+|:------                              |:-------                                                                                                       |
+| `type conflict in batch write`      | The **batch** contains another point with the same series, but one of the fields has a different value type.  |
+| `type conflict with existing data`  | The **bucket** contains another point with the same series, but one of the fields has a different value type. |
+| `measurement not allowed by schema` | The **bucket** is configured to use explicit schemas and none of the schemas matches the **measurement** of the point. |
