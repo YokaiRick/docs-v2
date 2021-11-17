@@ -124,7 +124,7 @@ InfluxDB logs three `rejected_points` entries, one for each field.
 | rejected_points | count  | 1      | temperature | airSensors  | measurement not allowed by schema |
 
 
-Buckets that have the [`explicit type`] use [explicit bucket schemas](/influxdb/cloud/organizations/buckets/bucket-schema/) and reject data that don't conform to one of the configured schemas.
+Buckets with the [`explicit type`] use [explicit bucket schemas](/influxdb/cloud/organizations/buckets/bucket-schema/) and reject data that doesn't conform to one of the configured schemas.
 For example, a request to write an `air_sensor` point that doesn't conform to the `air_sensor` measurement schema returns an HTTP `400 Bad Request` status code and the following response body:
 ```json
 {
