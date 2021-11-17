@@ -27,7 +27,7 @@ Learn how to handle and recover from errors when writing to InfluxDB.
 InfluxDB write requests may fail for a number of reasons.
 Common failure scenarios that return an HTTP `4xx` or `5xx` error status code include the following:
 
-- Exceeded a rate limit.
+- Exceeded a rate limit or size limit.
 - API token was invalid.
 - Client or server reached a timeout threshold.
 - Data was not formatted correctly.
