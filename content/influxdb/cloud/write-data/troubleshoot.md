@@ -79,7 +79,7 @@ If you notice data is missing in your bucket, do the following:
 ### Review rejected points
 
 InfluxDB may have rejected points even if the HTTP request returned "Success".
-Your organization's `_monitoring` bucket logs rejected data points and any parsing errors associated with them.
+InfluxDB logs rejected data points and associated errors to your organization's `_monitoring` bucket.
 To get a log of rejected points, query for the [`rejected_points` measurement](/influxdb/cloud/reference/internals/system-buckets/#_monitoring-bucket-schema) and the [`count` field](/influxdb/cloud/reference/internals/system-buckets/#_monitoring-bucket-schema) in your organization's `_monitoring` bucket.
 Each entry has a `count` equal to `1`.
 
