@@ -33,7 +33,6 @@ Common failure scenarios that return an HTTP `4xx` or `5xx` error status code in
 - Data was not formatted correctly.
 - Data did not conform to the [explicit bucket schema](/influxdb/cloud/organizations/buckets/bucket-schema/).
   See how to troubleshoot specific [bucket schema errors](/influxdb/cloud/organizations/buckets/bucket-schema/#troubleshoot-errors).
-- Size of the data payload was too large.
 
 Writes may fail partially or completely even though InfluxDB returns an HTTP `2xx` status code for a valid request.
 For example, a partial write may occur when InfluxDB writes points that conform to the schema of existing data, but rejects points that have the wrong data type in a field.
