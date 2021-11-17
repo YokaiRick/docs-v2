@@ -80,10 +80,8 @@ To get a log of rejected data points, query the [`rejected_points` measurement](
 
 ```js
 from(bucket: "_monitoring")
-  |> range(start:-1h)
-  |> filter(fn:(r) =>
-    r._measurement == "rejected_points"
-  )
+    |> range(start: -1h)
+    |> filter(fn:(r) =>  r._measurement == "rejected_points")
 ```
 
 InfluxDB returns `rejected_points` log entries.
