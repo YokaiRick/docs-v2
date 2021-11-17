@@ -44,7 +44,7 @@ Write requests return the following status codes:
 
 - `204` **Success**: InfluxDB validated the request data format and accepted the data for writing to the bucket.
     {{% note %}}
-`204` doesn't indicate a successful write operation since writes are asynchronous. If some of your data did not write to the bucket, see how to [check for rejected points](#review-rejected-points).
+`204` doesn't indicate a successful write operation given writes are asynchronous. If some of your data did not write to the bucket, see how to [check for rejected points](#review-rejected-points).
     {{% /note %}}
 
 - `400` **Bad request**: The [line protocol](/influxdb/cloud/reference/syntax/line-protocol/) data in the request is malformed.
