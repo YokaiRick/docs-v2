@@ -87,7 +87,7 @@ Each entry has a `count` equal to `1`.
 from(bucket: "_monitoring")
   |> range(start: -1h)
   |> filter(fn: (r) => r._measurement == "rejected_points")
-  |> filter(fn: (r) => r["_field"] == "count")
+  |> filter(fn: (r) => r._field == "count")
 ```
 
 InfluxDB returns `rejected_points` entries that contain the `bucket` where the rejection occurred and the `reason` for the rejection.
