@@ -104,7 +104,6 @@ For example, the following line protocol data has an `airSensors` measurement an
 
 ```
 airSensors,sensorId=TLM0201 temperature=73.97,humidity=35.23,co=0.48 1637014074
-
 ```
 
 If you try to write this data to a bucket that has the [`explicit` type](/influxdb/cloud/organizations/buckets/bucket-schema/) and doesn't have an `airSensors` schema, the `/api/v2/write` InfluxDB API returns an error and the following data:
